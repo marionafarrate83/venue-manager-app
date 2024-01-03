@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Venue Manager</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <div class="container-md">
+      <h2>Seleccione el salón:</h2>
+
+      <select
+        class="form-select"
+        aria-label="Default select example"
+        id="salon"
+        onchange="selectSalon()"
+      >
+        <option selected>Elige un salon:</option>
+        <option value="1">Aeropuerto</option>
+        <option value="2">Polanco</option>
+        <option value="3">Santa Fe</option>
+      </select>
+    </div>
+
+    <div class="container-md mt-5">
+      <h2>Seleccione fecha:</h2>
+      <button onclick="mesAntes()"><</button>
+      <label id="mesSeleccionado"></label>
+      <button onclick="mesDespues()">></button>
+    </div>
+
+    <div class="container-md mt-5">
+      <button onclick=nuevoContrato()><a href="/nuevoContrato.html">Nuevo contrato</a></button>
+    </div>
+
+    <section id="calendar">
+      <div class="container" onloadstart="diaHoy()">
+        <label id="dia"></label>
+      </div>
+      <div class="container" id="monthFocus"></div>
+    </section>
+
+    <section id="hiddenvals">
+      <label id="diaSeleccionado"></label>
+      <label id="mesLabel"></label>
+      <label id="yearLabel"></label>
+    </section>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+      integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"
+      integrity="sha384-BBtl+eGJRgqQAUMxJ7pMwbEyER4l1g+O15P+16Ep7Q9Q+zqX6gSbd85u4mG4QzX+"
+      crossorigin="anonymous"
+    ></script>
+
+    <script src=https://www.gstatic.com/firebasejs/4.8.1/firebase.js></script>
+
+    <script>
+
+      // Your web app's Firebase configuration
+      // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+      const firebaseConfig = {
+        apiKey: "AIzaSyDXgzcxcKWW9RRPp5pSDdAjWNgs1jmOKpw",
+        authDomain: "venue-manager-c9df1.firebaseapp.com",
+        databaseURL: "https://venue-manager-c9df1-default-rtdb.firebaseio.com",
+        projectId: "venue-manager-c9df1",
+        storageBucket: "venue-manager-c9df1.appspot.com",
+        messagingSenderId: "137052569769",
+        appId: "1:137052569769:web:0e48cb19ee2703533c69b8",
+        measurementId: "G-W9Q939XWPF"
+      };
+
+      // Initialize Firebase
+      firebase.initializeApp(firebaseConfig);
+
+      const dbRef = firebase.database().ref();
+
+      console.log("dbref: " + dbRef)
+
+      const eventsRef = dbRef.child('eventos');
+
+      console.log("eventsRef: " + eventsRef)
+
+      var eventos
+
+      eventsRef.on("child_added", snap =>{
+
+        eventos = snap.val();
+        let fechaEvento = eventos.fechaEvento
+        console.log(fechaEvento);
+      })
+
+      let fechaBuscar = '2023-12-29'
+
+      eventsRef.orderByChild('fechaEvento').equalTo(fechaBuscar).on('child_added', (snapshot) => {
+          console.log(snapshot.key);
+          let eventoSet = snapshot.val();
+          console.log(eventoSet.nombreCliente)
+          console.log(eventoSet.fechaEvento)
+      });
+
+      function selectSalon() {
+        a = document.getElementById("salon").value;
+        console.log("selección: " + a);
+
+        //carga día de hoy
+        //let today = new Date ().toISOString ().slice (0, 10)
+        let today = new Date();
+        console.log(today);
+
+        //document.getElementById("dia").innerText = today;
+        pintarMes(today);
+      }
+
+      function mesAntes() {
+        //let today = new Date ().toISOString ().slice (0, 10)
+        //console.log(today)
+        //var parts ='2014-04-03'.split('-'); //yyy-mm-dd
+        // Please pay attention to the month (parts[1]); JavaScript counts months from 0:
+        // January - 0, February - 1, etc.
+        var parts = [];
+        parts[0] = document.getElementById("yearLabel").innerText;
+        parts[1] = document.getElementById("mesLabel").innerText;
+        parts[2] = document.getElementById("diaSeleccionado").innerText;
+
+        parts[1] = parts[1] - 1;
+
+        var mydate = new Date(parts[0], parts[1] - 1, parts[2]);
+        console.log(mydate.toDateString());
+        pintarMes(mydate);
+      }
+
+      function mesDespues() {
+        //let today = new Date ().toISOString ().slice (0, 10)
+        //console.log(today)
+        //var parts ='2014-04-03'.split('-'); //yyy-mm-dd
+        // Please pay attention to the month (parts[1]); JavaScript counts months from 0:
+        // January - 0, February - 1, etc.
+        var parts = [];
+        parts[0] = document.getElementById("yearLabel").innerText;
+        console.log("parte 0 " + parts[0]);
+        parts[1] = document.getElementById("mesLabel").innerText;
+        console.log("parte 1 " + parts[1]);
+        parts[2] = document.getElementById("diaSeleccionado").innerText;
+        console.log("parte 2 " + parts[2]);
+
+        parts[1] = Number(parts[1]) + 1;
+        console.log("parte 1 post suma" + parts[1]);
+
+        var mydate = new Date(parts[0], parts[1] - 1, parts[2]);
+        console.log("myDate: " + mydate.toDateString());
+        pintarMes(mydate);
+      }
+
+      function pintarMes(fecha) {
+        let arrMes = [];
+
+        var day = fecha.getDate();
+
+        var month = fecha.getMonth() + 1;
+
+        var monthNameLong = fecha.toLocaleString("es-ES", { month: "long" });
+
+        document.getElementById("mesSeleccionado").innerText = monthNameLong;
+
+        var year = fecha.getFullYear();
+
+        console.log(month, year);
+
+        document.getElementById("diaSeleccionado").innerText = day;
+        document.getElementById("mesLabel").innerText = month;
+        document.getElementById("yearLabel").innerText = year;
+
+        let days = daysInMonth(year, month);
+
+        console.log("en el mes " + month + " hay: " + days + " días");
+
+        fechaUnoMes = month + "/01/" + year;
+
+        let diaInicioSemana = new Date(fechaUnoMes).toLocaleString("en-us", {
+          weekday: "long",
+        });
+
+        console.log(diaInicioSemana);
+
+        let iniciarEn = 1;
+
+        if (diaInicioSemana == "Monday") {
+          iniciarEn = 1;
+        }
+        if (diaInicioSemana == "Tuesday") {
+          iniciarEn = 2;
+        }
+        if (diaInicioSemana == "Wednesday") {
+          iniciarEn = 3;
+        }
+        if (diaInicioSemana == "Thursday") {
+          iniciarEn = 4;
+        }
+        if (diaInicioSemana == "Friday") {
+          iniciarEn = 5;
+        }
+        if (diaInicioSemana == "Saturday") {
+          iniciarEn = 6;
+        }
+        if (diaInicioSemana == "Sunday") {
+          iniciarEn = 7;
+        }
+
+        console.log("iniciar en: " + iniciarEn);
+
+        let x = 1;
+
+        for (let p = iniciarEn; p <= days + (iniciarEn - 1); p++) {
+          arrMes[p] = x;
+          x++;
+        }
+
+        calendarioUI = document.getElementById("monthFocus")
+
+        calendarioUI.innerHTML=""
+
+        $table = document.createElement("table")
+        $table.setAttribute("class","table table-primary")
+        
+        $th = document.createElement("th")
+        $th.innerText = "Lunes"
+        $table.append($th)
+        $th = document.createElement("th")
+        $th.innerText = "Martes"
+        $table.append($th)
+        $th = document.createElement("th")
+        $th.innerText = "Miercoles"
+        $table.append($th)
+        $th = document.createElement("th")
+        $th.innerText = "Jueves"
+        $table.append($th)
+        $th = document.createElement("th")
+        $th.innerText = "Viernes"
+        $table.append($th)
+        $th = document.createElement("th")
+        $th.innerText = "Sabado"
+        $table.append($th)
+        $th = document.createElement("th")
+        $th.innerText = "Domingo"
+        $table.append($th)
+
+        $tr = document.createElement("tr")
+        $table.append($tr)
+
+        
+
+        let counter = 1;
+
+        for (let i = 1; i <= 37; i++) {
+          
+          if (!arrMes[i]) {
+            arrMes[i] = "";
+          }
+
+
+          if (counter <= 7){
+
+            $td = document.createElement("td")
+            $td.innerHTML = "<span>" + arrMes[i] + "</span>"
+
+            var mesb = month.toString()
+
+            if (mesb.length < 2){
+              mesb = '0' + mesb;
+            }
+          
+            var diab = arrMes[i].toString()
+
+            if (diab.length < 2){
+                diab = '0' + diab;
+            }
+                
+            var fechaBuscar = year + "-" + mesb + "-" + diab
+            
+            console.log("fecha buscar: " + fechaBuscar)
+
+            eventsRef.orderByChild('fechaEvento').equalTo(fechaBuscar).on('child_added', (snapshot) => {
+            console.log(snapshot.key);
+            let eventoSet = snapshot.val();
+            console.log(eventoSet.nombreCliente)
+            
+            $span = document.createElement("span")
+            $span.setAttribute("class","badge bg-primary")
+            $span.innerText=eventoSet.nombreCliente
+            $td.append($span)
+            $br = document.createElement("br")
+            $td.append($br)
+          
+          })
+
+            $table.append($td)
+  
+            counter = counter + 1
+
+          } else {
+            
+            $tr = document.createElement("tr")
+            $table.append($tr)
+            $td = document.createElement("td")
+            $td.innerHTML = "<span>" + arrMes[i] + "</span>"
+
+            var mesb = month.toString()
+
+            if (mesb.length < 2){
+              mesb = '0' + mesb;
+            }
+          
+            var diab = arrMes[i].toString()
+
+            if (diab.length < 2){
+                diab = '0' + diab;
+            }
+                
+            var fechaBuscar = year + "-" + mesb + "-" + diab
+
+            console.log("fecha buscar: " + fechaBuscar)
+
+            eventsRef.orderByChild('fechaEvento').equalTo(fechaBuscar).on('child_added', (snapshot) => {
+            console.log(snapshot.key);
+            let eventoSet = snapshot.val();
+            console.log(eventoSet.nombreCliente)
+            
+            $span = document.createElement("span")
+            $span.setAttribute("class","badge bg-primary")
+            $span.innerText=eventoSet.nombreCliente
+            $td.append($span)
+            $br = document.createElement("br")
+            $td.append($br)
+
+          })
+
+            $table.append($td)
+            counter = 2
+
+          }
+
+        }
+
+        calendarioUI.append($table)
+
+        const diasEnCalendario = document.querySelectorAll("td");
+
+        diasEnCalendario.forEach((diaCal) => {
+          diaCal.addEventListener("click", clickHander);
+        });
+
+        function clickHander(e) {
+          console.log("clickhandler", e.target);
+          var publicEventDay = e.target.innerText;
+          document.getElementById("diaSeleccionado").innerText = publicEventDay;
+        }
+      }
+
+      // pass in any date as parameter anyDateInMonth
+      function daysInMonth(year, month) {
+        return new Date(year, month, 0).getDate();
+      }
+
+      function nuevoContrato(){
+
+        let d = document.getElementById("diaSeleccionado").innerText;
+        let m = document.getElementById("mesLabel").innerText;
+        let y = document.getElementById("yearLabel").innerText;
+
+        var url = window.location.href;
+        console.log(url);
+
+        let params = new URLSearchParams(d);
+        console.log(params);
+
+      }
+
+
+
+    </script>
+  </body>
+</html>
